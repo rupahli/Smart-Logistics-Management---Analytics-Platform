@@ -33,25 +33,25 @@ def load_data(cursor, connection):
 
 
 def get_unique_shipment_status(cursor, connection):
-    query = "SELECT DISTINCT status FROM shipments"
+    query = "select distinct status from shipments"
     cursor.execute(query)
     return [row[0] for row in cursor.fetchall()]
 
 
 def get_total_shipments(cursor, connection):
-    query = "SELECT COUNT(shipment_id) FROM shipments"
+    query = "select count(shipment_id) from shipments"
     cursor.execute(query)
     return cursor.fetchone()[0]
 
 
 def get_active_couriers(cursor, connection):
-    query = "SELECT COUNT(DISTINCT courier_id) FROM shipments WHERE status IN ('Pending', 'In Transit')"
+    query = "select count(distinct courier_id) from shipments where status in ('pending', 'in transit')"
     cursor.execute(query)
     return cursor.fetchone()[0]
 
 
 def get_total_costs(cursor, connection):
-    query = "SELECT SUM(fuel_cost), SUM(labor_cost), SUM(misc_cost) FROM costs"
+    query = "select sum(fuel_cost), sum(labor_cost), sum(misc_cost) from costs"
     cursor.execute(query)
     row = cursor.fetchone()
 
@@ -64,19 +64,19 @@ def get_total_costs(cursor, connection):
 
 
 def get_avg_delivery_time(cursor, connection):
-    query = "SELECT AVG(DATEDIFF(delivery_date, order_date)) FROM shipments WHERE delivery_date IS NOT NULL"
+    query = "select avg(datediff(delivery_date, order_date)) from shipments where delivery_date is not null"
     cursor.execute(query)
     return cursor.fetchone()[0]
 
 
 def get_delivered_shipments_count(cursor, connection):
-    query = "SELECT COUNT(*) FROM shipments WHERE status = 'Delivered'"
+    query = "select count(*) from shipments where status = 'delivered'"
     cursor.execute(query)
     return cursor.fetchone()[0]
 
 
 def get_cancelled_shipments_count(cursor, connection):
-    query = "SELECT COUNT(*) FROM shipments WHERE status = 'Cancelled'"
+    query = "select count(*) from shipments where status = 'cancelled'"
     cursor.execute(query)
     return cursor.fetchone()[0]
 

@@ -2,7 +2,7 @@ import pandas as pd
 
 
 def get_shipments_over_time(cursor, connection):
-    query = "SELECT order_date, COUNT(shipment_id) AS shipment_count FROM shipments GROUP BY order_date ORDER BY order_date"
+    query = "select order_date, count(shipment_id) as shipment_count from shipments group by order_date order by order_date"
     cursor.execute(query)
     data = cursor.fetchall()
     df = pd.DataFrame(data, columns=["order_date", "shipment_count"])
@@ -11,7 +11,7 @@ def get_shipments_over_time(cursor, connection):
 
 
 def get_top_origins(cursor, connection):
-    query = "SELECT origin, COUNT(shipment_id) AS shipment_count FROM shipments GROUP BY origin ORDER BY shipment_count DESC LIMIT 10"
+    query = "select origin, count(shipment_id) as shipment_count from shipments group by origin order by shipment_count desc limit 10"
     cursor.execute(query)
     data = cursor.fetchall()
     df = pd.DataFrame(data, columns=["origin", "shipment_count"])
@@ -19,7 +19,7 @@ def get_top_origins(cursor, connection):
 
 
 def get_top_destinations(cursor, connection):
-    query = "SELECT destination, COUNT(shipment_id) AS shipment_count FROM shipments GROUP BY destination ORDER BY shipment_count DESC LIMIT 10"
+    query = "select destination, count(shipment_id) as shipment_count from shipments group by destination order by shipment_count desc limit 10"
     cursor.execute(query)
     data = cursor.fetchall()
     df = pd.DataFrame(data, columns=["destination", "shipment_count"])
@@ -27,7 +27,7 @@ def get_top_destinations(cursor, connection):
 
 
 def get_shipment_tracking_details(cursor, connection, shipment_id):
-    query = "SELECT status, timestamp FROM shipment_tracking WHERE shipment_id = %s ORDER BY timestamp"
+    query = "select status, timestamp from shipment_tracking where shipment_id = %s order by timestamp"
     cursor.execute(query, (shipment_id,))
     data = cursor.fetchall()
     return pd.DataFrame(data, columns=["status", "timestamp"])
@@ -35,11 +35,9 @@ def get_shipment_tracking_details(cursor, connection, shipment_id):
 
 def get_top_couriers(cursor, connection):
     query = (
-        "SELECT cs.name courier_name, cs.rating rating, cs.vehicle_type, COUNT(ship.courier_id) total_deliveries "
-        "FROM logistics.courier_staff cs, logistics.shipments ship "
-        "WHERE cs.courier_id = ship.courier_id AND ship.status = 'Delivered' "
-        "GROUP BY cs.name, cs.rating, cs.vehicle_type "
-        "ORDER BY total_deliveries DESC, cs.rating DESC LIMIT 10"
+        "select cs.name courier_name, cs.rating rating, cs.vehicle_type, count(ship.courier_id) total_deliveries from logistics.courier_staff cs, logistics.shipments ship "
+        "where cs.courier_id = ship.courier_id and ship.status = 'delivered' "
+        "group by cs.name, cs.rating, cs.vehicle_type order by total_deliveries desc, cs.rating desc limit 10"
     )
     cursor.execute(query)
     data = cursor.fetchall()
@@ -47,7 +45,7 @@ def get_top_couriers(cursor, connection):
 
 
 def get_courier_costs(cursor, connection):
-    query = "SELECT SUM(fuel_cost) fuel_cost, SUM(labor_cost) labor_cost, SUM(misc_cost) misc_cost FROM costs"
+    query = "select sum(fuel_cost) fuel_cost, sum(labor_cost) labor_cost, sum(misc_cost) misc_cost from costs"
     cursor.execute(query)
     data = cursor.fetchall()
     return pd.DataFrame(data, columns=["fuel_cost", "labor_cost", "misc_cost"])
