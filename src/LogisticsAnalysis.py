@@ -1,5 +1,6 @@
 import streamlit as st
 import configuration.DatabaseConnection as conn
+from data.common_datasetload import load_data
 from feature_views.home import display_home_page
 from feature_views.shipment_search import display_shipment_search_and_filtering
 from feature_views.operational_kpis import display_operational_kpis
@@ -12,6 +13,7 @@ def main():
     st.set_page_config(layout="wide")
 
     cursor, connection = conn.load_connection()
+    load_data(cursor, connection)
 
     st.sidebar.title("Navigation")
     st.sidebar.caption("Smart Logistics Management & Analytics Platform")

@@ -229,15 +229,3 @@ def create_and_load_costs(cursor, connection, costs):
     cursor.executemany(query, costs.values.tolist())
     connection.commit()
     print("Data inserted into costs")
-
-
-__all__ = [
-    "load_data",
-    "get_unique_shipment_status",
-    "get_total_shipments",
-    "get_active_couriers",
-    "get_total_costs",
-    "get_avg_delivery_time",
-    "get_delivered_shipments_count",
-    "get_cancelled_shipments_count",
-]
