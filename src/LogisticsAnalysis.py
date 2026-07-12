@@ -12,8 +12,14 @@ def main():
 
     st.set_page_config(layout="wide")
 
-    cursor, connection = conn.load_connection()
-    load_data(cursor, connection)
+    if "cursor" not in st.session_state or "connection" not in st.session_state:
+        cursor, connection = conn.load_connection()
+        load_data(cursor, connection)
+        st.session_state.cursor = cursor
+        st.session_state.connection = connection
+    else:
+        cursor = st.session_state.cursor
+        connection = st.session_state.connection
 
     st.sidebar.title("Navigation")
     st.sidebar.caption("Smart Logistics Management & Analytics Platform")

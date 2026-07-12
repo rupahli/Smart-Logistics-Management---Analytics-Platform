@@ -38,7 +38,7 @@ def get_filtered_shipments(cursor, connection, filters):
         query += " and order_date between %s and %s"
         params.extend([filters["start_date"], filters["end_date"]])
 
-    query += " order by order_date desc limit 100"
+    query += " order by order_date desc"
 
     cursor.execute(query, params)
     shipment_rows = cursor.fetchall()
