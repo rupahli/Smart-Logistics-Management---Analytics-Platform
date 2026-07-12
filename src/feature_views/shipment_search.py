@@ -5,9 +5,7 @@ import data.shipment_queries as shipment_queries
 
 def display_shipment_search_and_filtering(cursor, connection):
     st.header("Shipment Search & Filtering")
-    st.markdown("- Search by shipment_id")
-    st.markdown("- Filter by: status, origin, destination, and order date")
-
+    
     shipment_id = st.text_input("Search by shipment_id", placeholder="Enter shipment ID")
 
     statuses, origins, destinations = shipment_queries.get_shipment_filters(cursor, connection)
@@ -23,14 +21,22 @@ def display_shipment_search_and_filtering(cursor, connection):
     with col3:
         selected_destination = st.selectbox("Filter by destination", destination_options)
 
-    start_date, end_date = st.date_input(
-        "Filter by order date range",
-        value=(pd.Timestamp.today() - pd.Timedelta(days=30), pd.Timestamp.today()),
-        format="YYYY-MM-DD",
-    )
+    col4, col5 = st.columns(2)
+    with col4:
+        start_date = st.date_input(
+            "Start date",
+            value=None,
+            format="YYYY-MM-DD",
+        )
+    with col5:
+        end_date = st.date_input(
+            "End date",
+            value=None,
+            format="YYYY-MM-DD",
+        )
 
-    if isinstance(start_date, tuple):
-        start_date, end_date = start_date
+    if start_date is not None and end_date is not None and start_date > end_date:
+        st.warning("Start date cannot be after end date.")
 
     shipment_df = shipment_queries.get_filtered_shipments(
         cursor,
