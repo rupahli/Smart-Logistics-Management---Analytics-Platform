@@ -15,6 +15,7 @@ def get_shipment_filters(cursor, connection):
 
 
 def get_filtered_shipments(cursor, connection, filters):
+    #9ce359e4
     query = """
         select
             st.shipment_id,
@@ -53,6 +54,9 @@ def get_filtered_shipments(cursor, connection, filters):
         params.extend([filters["start_date"], filters["end_date"]])
 
     query += " order by st.timestamp desc, s.order_date desc"
+
+    print(query)
+    print(params)
 
     cursor.execute(query, params)
     shipment_rows = cursor.fetchall()
