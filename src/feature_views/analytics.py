@@ -59,20 +59,18 @@ def display_analytical_placeholder(option, cursor, connection):
         
         #st.bar_chart(courier_metrics.set_index("name")["avg_rating"].head(10))
         
-        df_sorted = courier_metrics.sort_values(by='on_time_pct', ascending=False)
+        df_sorted = courier_metrics.sort_values(by='on_time_pct', ascending=False).head(20)
         
-        fig = px.bar(x=df_sorted["name"], y=df_sorted["on_time_pct"],
-                    
-                    color_continuous_scale=px.colors.sequential.Viridis)
+        fig = px.bar(x=df_sorted["name"], y=df_sorted["on_time_pct"])
         fig.update_xaxes(tickangle=45)
+        fig.update_yaxes(range=[30, 50])
         st.plotly_chart(fig, width="stretch")
 
-        df_sorted_avg_rating = courier_metrics.sort_values(by='avg_rating', ascending=False)
+        df_sorted_avg_rating = courier_metrics.sort_values(by='avg_rating', ascending=False).head(20)
         st.subheader("Average rating comparison")
-        fig = px.bar(x=df_sorted_avg_rating["name"], y=df_sorted_avg_rating["avg_rating"],
-                    
-                    color_continuous_scale=px.colors.sequential.Viridis)
+        fig = px.bar(x=df_sorted_avg_rating["name"], y=df_sorted_avg_rating["avg_rating"])
         fig.update_xaxes(tickangle=45)
+        fig.update_yaxes(range=[3, 6])
         st.plotly_chart(fig, width="stretch")
 
 
