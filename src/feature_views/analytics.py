@@ -7,7 +7,7 @@ def display_analytical_placeholder(option, cursor, connection):
     st.header(option)
 
     if option == "Delivery Performance Insights":
-        st.markdown("### 1️⃣ Delivery Performance Insights")
+        
         metrics = analytics.get_delivery_performance_metrics(cursor, connection)
         st.subheader("Average delivery time per route")
         st.dataframe(metrics["delivery_summary"], use_container_width=True)
@@ -16,31 +16,71 @@ def display_analytical_placeholder(option, cursor, connection):
         st.dataframe(metrics["delayed_routes"], use_container_width=True)
 
         st.subheader("Delivery time vs distance comparison")
-        fig = px.scatter(
+        fig = px.line(
             metrics["distance_comparison"],
             x="distance_km",
             y="avg_delivery_days",
-            size="shipment_count" if "shipment_count" in metrics["distance_comparison"].columns else None,
-            hover_name="origin",
-            text="destination",
+            #size="shipment_count" if "shipment_count" in metrics["distance_comparison"].columns else None,
+            #hover_name="origin",
+            #text="destination",
             title="Delivery Time vs Distance",
         )
         st.plotly_chart(fig, width="stretch")
 
+        
+        fig = px.scatter(
+            metrics["distance_comparison"],
+            x="distance_km",
+            y="avg_delivery_days",
+            color='origin', color_continuous_scale='Viridis', 
+            title="Delivery Time vs Distance Based on origin",
+        )
+        st.plotly_chart(fig, width="stretch")
+
+        fig = px.scatter(
+            metrics["distance_comparison"],
+            x="distance_km",
+            y="avg_delivery_days",
+            color='destination', color_continuous_scale='Viridis', 
+            title="Delivery Time vs Distance Based on destination",
+        )
+        st.plotly_chart(fig, width="stretch")
+
     elif option == "Courier Performance":
-        st.markdown("### 2️⃣ Courier Performance")
+        
         courier_metrics = analytics.get_courier_performance_metrics(cursor, connection)
         st.subheader("Shipments handled per courier")
         st.dataframe(courier_metrics, use_container_width=True)
 
         st.subheader("On-time delivery %")
-        st.bar_chart(courier_metrics.set_index("name")["on_time_pct"])
+        
+        #st.bar_chart(courier_metrics.set_index("name")["on_time_pct"].head(10))
 
+        
+        #st.bar_chart(courier_metrics.set_index("name")["avg_rating"].head(10))
+        
+        df_sorted = courier_metrics.sort_values(by='on_time_pct', ascending=False)
+        
+        fig = px.bar(x=df_sorted["name"], y=df_sorted["on_time_pct"],
+                    
+                    color_continuous_scale=px.colors.sequential.Viridis)
+        fig.update_xaxes(tickangle=45)
+        st.plotly_chart(fig, width="stretch")
+
+        df_sorted_avg_rating = courier_metrics.sort_values(by='avg_rating', ascending=False)
         st.subheader("Average rating comparison")
-        st.bar_chart(courier_metrics.set_index("name")["avg_rating"])
+        fig = px.bar(x=df_sorted_avg_rating["name"], y=df_sorted_avg_rating["avg_rating"],
+                    
+                    color_continuous_scale=px.colors.sequential.Viridis)
+        fig.update_xaxes(tickangle=45)
+        st.plotly_chart(fig, width="stretch")
+
+
+        
+
 
     elif option == "Cost Analytics":
-        st.markdown("### 3️⃣ Cost Analytics")
+        
         cost_metrics = analytics.get_cost_analytics_metrics(cursor, connection)
         st.subheader("Total cost per shipment")
         st.dataframe(cost_metrics["cost_per_shipment"], use_container_width=True)

@@ -3,31 +3,30 @@ import pandas as pd
 
 def get_delivery_performance_metrics(cursor, connection):
     query = """
-        SELECT s.origin, s.destination,
-               ROUND(AVG(DATEDIFF(s.delivery_date, s.order_date)), 2) AS avg_delivery_days,
-               ROUND(AVG(COALESCE(r.avg_time_hours, 0) / 24.0), 2) AS expected_days,
-               COUNT(s.shipment_id) AS shipment_count
-        FROM shipments s
-        LEFT JOIN routes r ON s.origin = r.origin AND s.destination = r.destination
-        WHERE s.delivery_date IS NOT NULL AND s.order_date IS NOT NULL
-        GROUP BY s.origin, s.destination
-        ORDER BY avg_delivery_days DESC
+        select s.origin, s.destination,
+               round(avg(datediff(s.delivery_date, s.order_date)), 2) as avg_delivery_days,
+               count(s.shipment_id) as shipment_count
+        from shipments s
+        left join routes r on s.origin = r.origin and s.destination = r.destination
+        where s.delivery_date is not null and s.order_date is not null
+        group by s.origin, s.destination
+        order by avg_delivery_days desc
     """
     cursor.execute(query)
     delivery_summary = pd.DataFrame(
         cursor.fetchall(),
-        columns=["origin", "destination", "avg_delivery_days", "expected_days", "shipment_count"],
+        columns=["origin", "destination", "avg_delivery_days", "shipment_count"],
     )
 
     delayed_query = """
-        SELECT s.origin, s.destination,
-               ROUND(AVG(DATEDIFF(s.delivery_date, s.order_date) - COALESCE(r.avg_time_hours, 0) / 24.0), 2) AS delay_days,
-               COUNT(s.shipment_id) AS shipment_count
-        FROM shipments s
-        LEFT JOIN routes r ON s.origin = r.origin AND s.destination = r.destination
-        WHERE s.delivery_date IS NOT NULL AND s.order_date IS NOT NULL
-        GROUP BY s.origin, s.destination
-        ORDER BY delay_days DESC
+        select s.origin, s.destination,
+               round(avg(datediff(s.delivery_date, s.order_date) - (r.avg_time_hours / 24)), 2) as delay_days,
+               count(s.shipment_id) as shipment_count
+        from shipments s
+        left join routes r on s.origin = r.origin and s.destination = r.destination
+        where s.delivery_date is not null and s.order_date is not null
+        group by s.origin, s.destination
+        order by delay_days desc
     """
     cursor.execute(delayed_query)
     delayed_routes = pd.DataFrame(
@@ -36,14 +35,14 @@ def get_delivery_performance_metrics(cursor, connection):
     )
 
     comparison_query = """
-        SELECT s.origin, s.destination,
-               ROUND(AVG(DATEDIFF(s.delivery_date, s.order_date)), 2) AS avg_delivery_days,
-               ROUND(AVG(COALESCE(r.distance_km, 0)), 2) AS distance_km
-        FROM shipments s
-        LEFT JOIN routes r ON s.origin = r.origin AND s.destination = r.destination
-        WHERE s.delivery_date IS NOT NULL AND s.order_date IS NOT NULL
-        GROUP BY s.origin, s.destination
-        ORDER BY distance_km DESC
+        select s.origin, s.destination,
+               round(avg(datediff(s.delivery_date, s.order_date)), 2) as avg_delivery_days,
+               round(avg(r.distance_km), 2) as distance_km
+        from shipments s
+        left join routes r on s.origin = r.origin and s.destination = r.destination
+        where s.delivery_date is not null and s.order_date is not null
+        group by s.origin, s.destination
+        order by distance_km desc
     """
     cursor.execute(comparison_query)
     distance_comparison = pd.DataFrame(
@@ -60,14 +59,14 @@ def get_delivery_performance_metrics(cursor, connection):
 
 def get_courier_performance_metrics(cursor, connection):
     query = """
-        SELECT s.courier_id, cs.name,
-               COUNT(s.shipment_id) AS shipments_handled,
-               ROUND(100.0 * SUM(CASE WHEN s.status = 'Delivered' THEN 1 ELSE 0 END) / COUNT(s.shipment_id), 2) AS on_time_pct,
-               ROUND(AVG(cs.rating), 1) AS avg_rating
-        FROM shipments s
-        LEFT JOIN courier_staff cs ON s.courier_id = cs.courier_id
-        GROUP BY s.courier_id, cs.name
-        ORDER BY shipments_handled DESC
+        select s.courier_id, cs.name,
+               count(s.shipment_id) as shipments_handled,
+               round(100.0 * sum(case when s.status = 'Delivered' then 1 else 0 end) / count(s.shipment_id), 2) as on_time_pct,
+               round(avg(cs.rating), 1) as avg_rating
+        from shipments s
+        left join courier_staff cs on s.courier_id = cs.courier_id
+        group by s.courier_id, cs.name
+        order by shipments_handled desc
     """
     cursor.execute(query)
     return pd.DataFrame(
@@ -78,14 +77,14 @@ def get_courier_performance_metrics(cursor, connection):
 
 def get_cost_analytics_metrics(cursor, connection):
     total_cost_query = """
-        SELECT s.shipment_id, s.origin, s.destination,
-               ROUND(COALESCE(c.fuel_cost, 0) + COALESCE(c.labor_cost, 0) + COALESCE(c.misc_cost, 0), 2) AS total_cost,
-               ROUND(COALESCE(c.fuel_cost, 0), 2) AS fuel_cost,
-               ROUND(COALESCE(c.labor_cost, 0), 2) AS labor_cost,
-               ROUND(COALESCE(c.misc_cost, 0), 2) AS misc_cost
-        FROM shipments s
-        LEFT JOIN costs c ON s.shipment_id = c.shipment_id
-        ORDER BY total_cost DESC
+        select s.shipment_id, s.origin, s.destination,
+               round((c.fuel_cost + c.labor_cost + c.misc_cost), 2) as total_cost,
+               round((c.fuel_cost), 2) as fuel_cost,
+               round((c.labor_cost), 2) as labor_cost,
+               round((c.misc_cost), 2) as misc_cost
+        from shipments s
+        left join costs c on s.shipment_id = c.shipment_id
+        order by total_cost desc
     """
     cursor.execute(total_cost_query)
     cost_per_shipment = pd.DataFrame(
@@ -94,13 +93,13 @@ def get_cost_analytics_metrics(cursor, connection):
     )
 
     route_cost_query = """
-        SELECT s.origin, s.destination,
-               ROUND(SUM(COALESCE(c.fuel_cost, 0) + COALESCE(c.labor_cost, 0) + COALESCE(c.misc_cost, 0)), 2) AS route_cost,
-               COUNT(s.shipment_id) AS shipment_count
-        FROM shipments s
-        LEFT JOIN costs c ON s.shipment_id = c.shipment_id
-        GROUP BY s.origin, s.destination
-        ORDER BY route_cost DESC
+        select s.origin, s.destination,
+               round(sum(c.fuel_cost + c.labor_cost + c.misc_cost), 2) as route_cost,
+               count(s.shipment_id) as shipment_count
+        from shipments s
+        left join costs c on s.shipment_id = c.shipment_id
+        group by s.origin, s.destination
+        order by route_cost desc
     """
     cursor.execute(route_cost_query)
     cost_per_route = pd.DataFrame(
@@ -109,9 +108,9 @@ def get_cost_analytics_metrics(cursor, connection):
     )
 
     cost_mix_query = """
-        SELECT ROUND(SUM(COALESCE(c.fuel_cost, 0)) / NULLIF(SUM(COALESCE(c.fuel_cost, 0) + COALESCE(c.labor_cost, 0) + COALESCE(c.misc_cost, 0)), 0) * 100, 2) AS fuel_pct,
-               ROUND(SUM(COALESCE(c.labor_cost, 0)) / NULLIF(SUM(COALESCE(c.fuel_cost, 0) + COALESCE(c.labor_cost, 0) + COALESCE(c.misc_cost, 0)), 0) * 100, 2) AS labor_pct
-        FROM costs c
+        select round((sum(c.fuel_cost) / sum(c.fuel_cost + c.labor_cost + c.misc_cost)) * 100, 2) as fuel_pct,
+               round((sum(c.labor_cost) / sum(c.fuel_cost + c.labor_cost + c.misc_cost)) * 100, 2) as labor_pct
+        from costs c
     """
     cursor.execute(cost_mix_query)
     cost_mix = pd.DataFrame(cursor.fetchall(), columns=["fuel_pct", "labor_pct"])
@@ -126,12 +125,12 @@ def get_cost_analytics_metrics(cursor, connection):
 
 def get_cancellation_analysis_metrics(cursor, connection):
     origin_query = """
-        SELECT s.origin,
-               ROUND(100.0 * SUM(CASE WHEN s.status = 'Cancelled' THEN 1 ELSE 0 END) / COUNT(s.shipment_id), 2) AS cancellation_rate,
-               COUNT(s.shipment_id) AS shipment_count
-        FROM shipments s
-        GROUP BY s.origin
-        ORDER BY cancellation_rate DESC
+        select s.origin,
+               round(100.0 * sum(case when s.status = 'Cancelled' then 1 else 0 end) / count(s.shipment_id), 2) as cancellation_rate,
+               count(s.shipment_id) as shipment_count
+        from shipments s
+        group by s.origin
+        order by cancellation_rate desc
     """
     cursor.execute(origin_query)
     cancellation_by_origin = pd.DataFrame(
@@ -140,13 +139,13 @@ def get_cancellation_analysis_metrics(cursor, connection):
     )
 
     courier_query = """
-        SELECT s.courier_id, cs.name,
-               ROUND(100.0 * SUM(CASE WHEN s.status = 'Cancelled' THEN 1 ELSE 0 END) / COUNT(s.shipment_id), 2) AS cancellation_rate,
-               COUNT(s.shipment_id) AS shipment_count
-        FROM shipments s
-        LEFT JOIN courier_staff cs ON s.courier_id = cs.courier_id
-        GROUP BY s.courier_id, cs.name
-        ORDER BY cancellation_rate DESC
+        select s.courier_id, cs.name,
+               round(100.0 * sum(case when s.status = 'Cancelled' then 1 else 0 end) / count(s.shipment_id), 2) as cancellation_rate,
+               count(s.shipment_id) as shipment_count
+        from shipments s
+        left join courier_staff cs on s.courier_id = cs.courier_id
+        group by s.courier_id, cs.name
+        order by cancellation_rate desc
     """
     cursor.execute(courier_query)
     cancellation_by_courier = pd.DataFrame(
@@ -155,14 +154,14 @@ def get_cancellation_analysis_metrics(cursor, connection):
     )
 
     time_query = """
-        SELECT s.shipment_id, s.origin, s.destination, s.order_date,
-               MIN(st.timestamp) AS cancellation_time,
-               DATEDIFF(MIN(st.timestamp), s.order_date) AS days_to_cancel
-        FROM shipments s
-        JOIN shipment_tracking st ON s.shipment_id = st.shipment_id
-        WHERE st.status = 'Cancelled'
-        GROUP BY s.shipment_id, s.origin, s.destination, s.order_date
-        ORDER BY days_to_cancel DESC
+        select s.shipment_id, s.origin, s.destination, s.order_date,
+               min(st.timestamp) as cancellation_time,
+               datediff(min(st.timestamp), s.order_date) as days_to_cancel
+        from shipments s
+        join shipment_tracking st on s.shipment_id = st.shipment_id
+        where st.status = 'Cancelled'
+        group by s.shipment_id, s.origin, s.destination, s.order_date
+        order by days_to_cancel desc
     """
     cursor.execute(time_query)
     time_to_cancellation = pd.DataFrame(
@@ -179,14 +178,14 @@ def get_cancellation_analysis_metrics(cursor, connection):
 
 def get_warehouse_insights_metrics(cursor, connection):
     query = """
-        SELECT w.warehouse_id, w.city, w.capacity,
-               SUM(CASE WHEN s.origin = w.city THEN 1 ELSE 0 END) AS origin_shipments,
-               SUM(CASE WHEN s.destination = w.city THEN 1 ELSE 0 END) AS destination_shipments,
-               SUM(CASE WHEN s.origin = w.city THEN 1 ELSE 0 END) + SUM(CASE WHEN s.destination = w.city THEN 1 ELSE 0 END) AS traffic_count
-        FROM warehouses w
-        LEFT JOIN shipments s ON s.origin = w.city OR s.destination = w.city
-        GROUP BY w.warehouse_id, w.city, w.capacity
-        ORDER BY traffic_count DESC
+        select w.warehouse_id, w.city, w.capacity,
+               sum(case when s.origin = w.city then 1 else 0 end) as origin_shipments,
+               sum(case when s.destination = w.city then 1 else 0 end) as destination_shipments,
+               sum(case when s.origin = w.city then 1 else 0 end) + sum(case when s.destination = w.city then 1 else 0 end) as traffic_count
+        from warehouses w
+        left join shipments s on s.origin = w.city or s.destination = w.city
+        group by w.warehouse_id, w.city, w.capacity
+        order by traffic_count desc
     """
     cursor.execute(query)
     return pd.DataFrame(

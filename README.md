@@ -19,17 +19,16 @@ This project is a Streamlit-based logistics dashboard that helps users explore s
 
 ## Run the Project
 1. Activate your Python environment
-   ```bash
+  
    .\.logistic\Scripts\Activate.ps1
-   ```
+  
 2. Install required packages
-   ```bash
    pip install streamlit pandas mysql-connector-python numpy
-   ```
+   
 3. Start the app
-   ```bash
+   
    streamlit run src/LogisticsAnalysis.py
-   ```
+   
 
 ## Features
 - Shipment search and filtering
