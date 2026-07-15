@@ -59,14 +59,14 @@ def display_analytical_placeholder(option, cursor, connection):
         
         #st.bar_chart(courier_metrics.set_index("name")["avg_rating"].head(10))
         
-        df_sorted = courier_metrics.sort_values(by='on_time_pct', ascending=False).head(20)
+        df_sorted = courier_metrics.sort_values(by='on_time_pct', ascending=False).head(40)
         
         fig = px.bar(x=df_sorted["name"], y=df_sorted["on_time_pct"])
         fig.update_xaxes(tickangle=45)
         fig.update_yaxes(range=[30, 50])
         st.plotly_chart(fig, width="stretch")
 
-        df_sorted_avg_rating = courier_metrics.sort_values(by='avg_rating', ascending=False).head(20)
+        df_sorted_avg_rating = courier_metrics.sort_values(by='avg_rating', ascending=False)
         st.subheader("Average rating comparison")
         fig = px.bar(x=df_sorted_avg_rating["name"], y=df_sorted_avg_rating["avg_rating"])
         fig.update_xaxes(tickangle=45)
@@ -93,7 +93,7 @@ def display_analytical_placeholder(option, cursor, connection):
         st.dataframe(cost_metrics["high_cost_shipments"], use_container_width=True)
 
     elif option == "Cancellation Analysis":
-        st.markdown("### 4️⃣ Cancellation Analysis")
+        
         cancellation_metrics = analytics.get_cancellation_analysis_metrics(cursor, connection)
         st.subheader("Cancellation rate by origin")
         st.dataframe(cancellation_metrics["cancellation_by_origin"], use_container_width=True)
@@ -105,13 +105,20 @@ def display_analytical_placeholder(option, cursor, connection):
         st.dataframe(cancellation_metrics["time_to_cancellation"], use_container_width=True)
 
     elif option == "Warehouse Insights":
-        st.markdown("### 5️⃣ Warehouse Insights")
+        
         warehouse_metrics = analytics.get_warehouse_insights_metrics(cursor, connection)
         st.subheader("Warehouse capacity comparison")
         st.dataframe(warehouse_metrics, use_container_width=True)
 
         st.subheader("High-traffic warehouse cities")
-        st.bar_chart(warehouse_metrics.set_index("city")["traffic_count"])
+        #st.bar_chart(warehouse_metrics.set_index("city")["traffic_count"])
+
+
+        fig = px.bar(warehouse_metrics,x="city", y="traffic_count",color_continuous_scale=px.colors.sequential.Viridis)
+        fig.update_xaxes(tickangle=45)
+        #fig.update_yaxes(range=[30, 50])
+        st.plotly_chart(fig, width="stretch")
+
 
     else:
         st.info("Select an analytical view from the sidebar.")
